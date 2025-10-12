@@ -189,7 +189,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   void _buildScreensAndNavItems() {
     _screens = [
-      DashboardScreen(token: widget.token),
+      DashboardScreen(),
       AddContentScreen(),
       MyContentsScreen(),
       //MemberListScreen(token: widget.token),

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import '../screens/dashboard_screen.dart';
-import '../screens/member_list_screen.dart';
-import '../screens/activity_list_screen.dart';
-import '../screens/payment_list_screen.dart';
 import '../screens/setting_screen.dart';
 
 class BottomNav extends StatefulWidget {

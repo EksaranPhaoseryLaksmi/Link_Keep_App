@@ -1,104 +1,151 @@
 import 'package:flutter/material.dart';
+import '../models/Category.dart';
+import '../service/api_service.dart';
+import '../service/auth_service.dart';
+import 'edit_category_screen.dart';
 
-class CategoryScreen extends StatelessWidget {
+class CategoryScreen extends StatefulWidget {
   const CategoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> categories = [
-      {'name': 'Food', 'icon': Icons.restaurant_menu, 'color': Colors.orange},
-      {'name': 'Trip.', 'icon': Icons.flight_takeoff, 'color': Colors.blue},
-      {'name': 'Fashion', 'icon': Icons.checkroom, 'color': Colors.pink},
-      {'name': 'Accessories', 'icon': Icons.watch, 'color': Colors.black87},
-      {'name': 'Music', 'icon': Icons.music_note, 'color': Colors.redAccent},
-      {'name': 'Cosmetics', 'icon': Icons.face, 'color': Colors.purple},
-      {'name': 'Gaming', 'icon': Icons.sports_esports, 'color': Colors.blueAccent},
-      {'name': 'Things', 'icon': Icons.category, 'color': Colors.teal},
-      {'name': 'Music', 'icon': Icons.music_note, 'color': Colors.redAccent},
-      {'name': 'Cosmetics', 'icon': Icons.face, 'color': Colors.purple},
-      {'name': 'Gaming', 'icon': Icons.sports_esports, 'color': Colors.blueAccent},
-      {'name': 'Things', 'icon': Icons.category, 'color': Colors.teal},
-    ];
+  State<CategoryScreen> createState() => _CategoryScreenState();
+}
 
+class _CategoryScreenState extends State<CategoryScreen> {
+  late Future<List<Category>> _futureCategories;
+  String? _token;
+
+  @override
+  void initState() {
+    super.initState();
+    _initTokenAndLoadCategories();
+  }
+
+  Future<void> _initTokenAndLoadCategories() async {
+    _token = await AuthService().getToken();
+    if (_token == null) return;
+
+    _loadCategories();
+  }
+
+  void _loadCategories() {
+    if (_token == null) return;
+
+    final apiService = ApiService(_token!);
+    setState(() {
+      _futureCategories = apiService.fetchCategories();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.greenAccent, // teal frame background
+      backgroundColor: Colors.greenAccent,
       appBar: AppBar(
         backgroundColor: Colors.greenAccent,
         title: const Text(
           'Category',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        //centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-      ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () async {
+              if (_token == null) return;
 
-      // ---------------- Main Content ----------------
-      body: Center(
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9, // not full width
-          height: MediaQuery.of(context).size.height * 0.8, // not full height
-          decoration: BoxDecoration(
-            color: Colors.grey[200], // light gray background for grid
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white, width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 6,
-                offset: const Offset(2, 2),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(16),
-          child: GridView.builder(
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EditCategoryScreen(token: _token!),
+                ),
+              );
+
+              if (result == true) _loadCategories();
+            },
+          )
+        ],
+      ),
+      body: FutureBuilder<List<Category>>(
+        future: _futureCategories,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No categories found'));
+          }
+
+          final categories = snapshot.data!;
+          return GridView.builder(
+            padding: const EdgeInsets.all(12),
             itemCount: categories.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3, // 4 columns
+              crossAxisCount: 3,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
             itemBuilder: (context, index) {
               final cat = categories[index];
               return InkWell(
-                onTap: () {
-                  Navigator.pop(context, cat['name']); // Return selected name
+                onTap: () async {
+                  if (_token == null) return;
+
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          EditCategoryScreen(token: _token!, category: cat),
+                    ),
+                  );
+
+                  if (result == true) _loadCategories();
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 4,
-                        offset: const Offset(2, 2),
-                      ),
+                          color: Colors.black12,
+                          blurRadius: 4,
+                          offset: Offset(2, 2)),
                     ],
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(cat['icon'], color: cat['color'], size: 32),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          cat.imageUrl,
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image,
+                              size: 40, color: Colors.grey),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Text(
-                        cat['name'],
+                        cat.name,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
+                            fontSize: 13, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
                 ),
               );
             },
-          ),
-        ),
+          );
+        },
       ),
     );
   }
