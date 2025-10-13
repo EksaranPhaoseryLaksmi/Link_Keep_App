@@ -20,11 +20,11 @@ class _BottomNavState extends State<BottomNav> {
   void initState() {
     super.initState();
     _screens = [
-      DashboardScreen(token: widget.token),
-      MemberListScreen(token: widget.token), // ✅ Pass token here
-      ActivityListScreen(token: widget.token),
-      PaymentListScreen(token: widget.token),
-      SettingsScreen(token: widget.token),
+      DashboardScreen(),
+      //MemberListScreen(), // ✅ Pass token here
+      //ActivityListScreen(),
+      //PaymentListScreen(),
+      //SettingsScreen(),
     ];
   }
 
@@ -32,7 +32,7 @@ class _BottomNavState extends State<BottomNav> {
     setState(() => _selectedIndex = index);
   }
 
-  @override
+  //@overrideui
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_selectedIndex],
