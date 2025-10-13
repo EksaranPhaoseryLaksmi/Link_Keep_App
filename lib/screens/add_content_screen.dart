@@ -20,6 +20,8 @@ class _AddContentScreenState extends State<AddContentScreen> {
   bool _loadingCategories = true;
   bool _saving = false;
 
+  int? _selectedStatus; // 0 = Video, 1 = Music, 2 = WebView
+
   @override
   void initState() {
     super.initState();
@@ -50,9 +52,11 @@ class _AddContentScreenState extends State<AddContentScreen> {
   Future<void> _saveContent() async {
     if (_titleController.text.isEmpty ||
         _linkController.text.isEmpty ||
-        _selectedCategory == null) {
+        _selectedCategory == null ||
+        _selectedStatus == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill all required fields')));
+        const SnackBar(content: Text('Please fill all required fields')),
+      );
       return;
     }
 
@@ -68,8 +72,9 @@ class _AddContentScreenState extends State<AddContentScreen> {
       "url": _linkController.text,
       "title": _titleController.text,
       "description": _notesController.text,
-      "created_by": "1", // You can get current user ID from AuthService
+      "created_by": "1", // Replace with current user ID if available
       "category_id": _selectedCategory!.id.toString(),
+      "status": _selectedStatus.toString(), // Add status here
     };
 
     try {
@@ -167,6 +172,43 @@ class _AddContentScreenState extends State<AddContentScreen> {
                   onChanged: (value) {
                     setState(() {
                       _selectedCategory = value;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Status Dropdown
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: DropdownButtonFormField<int>(
+                  value: _selectedStatus,
+                  decoration: const InputDecoration(
+                    hintText: 'Content Type (Status)',
+                    border: InputBorder.none,
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 0,
+                      child: Text('Video'),
+                    ),
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text('Music'),
+                    ),
+                    DropdownMenuItem(
+                      value: 2,
+                      child: Text('WebView'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedStatus = value;
                     });
                   },
                 ),
