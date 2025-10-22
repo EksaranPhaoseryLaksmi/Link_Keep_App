@@ -8,25 +8,24 @@ class AuthService {
   //final String baseUrl = 'http://192.168.137.182:8080/api/auth';
   //final String baseUrl = 'http://192.168.0.3:8080/api/auth';
 
-  Future<Map<String, dynamic>?> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String username, String password) async {
     final response = await http.post(
       Uri.parse('$baseUrl/login'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': email,
-        'password': password,
-      }),
+      body: jsonEncode({'username': username, 'password': password}),
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      await storage.write(key: 'token', value: data['token']);
-      // Save user info as JSON string
-      await storage.write(key: 'user', value: jsonEncode(data['user']));
-      return data['user']; // return user info
-    }
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
 
-    return null;
+    if (response.statusCode == 200) {
+      await storage.write(key: 'token', value: data['token']);
+      await storage.write(key: 'user', value: jsonEncode(data['user']));
+      return {'success': true, 'data': data['user']};
+    } else {
+      // Handle error messages sent by backend
+      final msg = data['error'] ?? 'Login failed';
+      return {'success': false, 'message': msg};
+    }
   }
 
   Future<void> logout() async {
@@ -80,12 +79,11 @@ class AuthService {
     required String teamId,
   }) async {
     final url = Uri.parse('$baseUrl/register');
+
     try {
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': username,
           'password': password,
@@ -95,33 +93,44 @@ class AuthService {
       );
 
       final body = utf8.decode(response.bodyBytes);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // assume response body contains JSON
-        final jsonResp = jsonDecode(body);
         return {
           'success': true,
-          'message': jsonResp['message'] ?? 'Registered successfully',
-          'data': jsonResp,
+          'message': 'Registered successfully. Please check your email to verify your account.',
         };
-      } else {
-        // try to parse error message
-        String err = 'Registration failed (status ${response.statusCode})';
-        try {
-          final jsonErr = jsonDecode(body);
-          if (jsonErr is Map && jsonErr.containsKey('message')) {
-            err = jsonErr['message'].toString();
-          } else if (jsonErr is Map && jsonErr.containsKey('error')) {
-            err = jsonErr['error'].toString();
-          } else {
-            err = body;
-          }
-        } catch (_) {
-          err = body;
-        }
-        return {'success': false, 'message': err};
       }
+
+      // parse error
+      String err = 'Registration failed (status ${response.statusCode})';
+      try {
+        final jsonErr = jsonDecode(body);
+        if (jsonErr is Map && jsonErr.containsKey('message')) err = jsonErr['message'];
+        else if (jsonErr is Map && jsonErr.containsKey('error')) err = jsonErr['error'];
+        else err = body;
+      } catch (_) {
+        err = body;
+      }
+      return {'success': false, 'message': err};
     } catch (e) {
       return {'success': false, 'message': 'Exception: $e'};
+    }
+  }
+  Future<bool> resendVerificationEmail(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/resend-verification'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+
+      if (response.statusCode == 200) {
+        return true; // email sent successfully
+      } else {
+        return false; // failed
+      }
+    } catch (_) {
+      return false;
     }
   }
 

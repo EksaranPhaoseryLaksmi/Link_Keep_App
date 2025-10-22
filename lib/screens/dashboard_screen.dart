@@ -36,8 +36,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _searchController.dispose();
     super.dispose();
   }
-
+  bool _isLoading = true;
   Future<void> _loadCategories() async {
+    setState(() => _isLoading = true); // start loading
     final authService = AuthService();
     final token = await authService.getToken();
     final int? userid = await authService.getUserId();
@@ -50,6 +51,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       _allCategories = categories;
       _filteredCategories = categories;
+      _isLoading = false; // done loading
     });
   }
 
@@ -81,17 +83,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildCategoriesSection() {
-    if (_allCategories.isEmpty) {
+    if (_isLoading) {
       return const SizedBox(
         height: 200,
         child: Center(child: CircularProgressIndicator()),
       );
     }
 
-    if (_filteredCategories.isEmpty) {
-      return const SizedBox(
+    if (_allCategories.isEmpty) {
+      return SizedBox(
         height: 200,
-        child: Center(child: Text('No categories found')),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('No categories found.'),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Navigate to add new category screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CategoryScreen()),
+                  ).then((_) => _loadCategories()); // reload after adding
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Add New Category'),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -260,7 +281,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             padding:
-            const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+            const EdgeInsets.symmetric(horizontal: 70, vertical: 20),
             elevation: 0,
             minimumSize: const Size(180, 45),
           ),
