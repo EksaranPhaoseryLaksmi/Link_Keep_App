@@ -14,6 +14,7 @@ class CategoryScreen extends StatefulWidget {
 class _CategoryScreenState extends State<CategoryScreen> {
   late Future<List<Category>> _futureCategories;
   String? _token;
+  int? userid;
 
   @override
   void initState() {
@@ -22,6 +23,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   Future<void> _initTokenAndLoadCategories() async {
+    userid = await AuthService().getUserId();
     _token = await AuthService().getToken();
     if (_token == null) return;
 
@@ -30,10 +32,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   void _loadCategories() {
     if (_token == null) return;
-
     final apiService = ApiService(_token!);
     setState(() {
-      _futureCategories = apiService.fetchCategories();
+      _futureCategories = apiService.fetchCategories(userid);
     });
   }
 

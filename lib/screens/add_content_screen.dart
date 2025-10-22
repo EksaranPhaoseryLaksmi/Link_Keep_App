@@ -31,15 +31,16 @@ class _AddContentScreenState extends State<AddContentScreen> {
   Future<void> _fetchCategories() async {
     final authService = AuthService();
     final token = await authService.getToken();
+    final int? userid = await authService.getUserId();
     if (token == null) return;
 
     final apiService = ApiService(token);
     try {
-      final categories = await apiService.fetchCategories();
-      setState(() {
-        _categories = categories;
-        _loadingCategories = false;
-      });
+        final categories = await apiService.fetchCategories(userid);
+        setState(() {
+          _categories = categories;
+          _loadingCategories = false;
+        });
     } catch (e) {
       setState(() {
         _loadingCategories = false;
@@ -64,6 +65,7 @@ class _AddContentScreenState extends State<AddContentScreen> {
 
     final authService = AuthService();
     final token = await authService.getToken();
+    final int? userid = await authService.getUserId();
     if (token == null) return;
 
     final apiService = ApiService(token);
@@ -72,17 +74,26 @@ class _AddContentScreenState extends State<AddContentScreen> {
       "url": _linkController.text,
       "title": _titleController.text,
       "description": _notesController.text,
-      "created_by": "1", // Replace with current user ID if available
+      "created_by": userid, // Replace with current user ID if available
       "category_id": _selectedCategory!.id.toString(),
       "status": _selectedStatus.toString(), // Add status here
     };
 
     try {
       await apiService.createLink(data);
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Content saved!')));
-      Navigator.pop(context);
+      setState(() {
+        _saving = false;
+        _titleController.clear();
+        _linkController.clear();
+        _notesController.clear();
+        _selectedCategory = null;
+        _selectedStatus = null;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Content saved successfully!')),
+        );
+      }
     } catch (e) {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context)

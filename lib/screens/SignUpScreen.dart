@@ -1,8 +1,6 @@
+// lib/screens/signup_screen.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
 import '../service/auth_service.dart';
-
 import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -16,20 +14,63 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  final teamController = TextEditingController(text: '1'); // default team_id = "1"
 
   bool isLoading = false;
   bool isPasswordVisible = false;
 
+  final AuthService authService = AuthService();
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    teamController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => isLoading = true);
+
+    final result = await authService.register(
+      name: nameController.text.trim(),
+      username: emailController.text.trim(),
+      password: passwordController.text,
+      teamId: teamController.text.trim(),
+    );
+
+    setState(() => isLoading = false);
+
+    if (result['success'] == true) {
+      final message = result['message'] ?? 'Account created successfully!';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      // navigate to login
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => LoginScreen()),
+      );
+    } else {
+      final message = result['message'] ?? 'Registration failed';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authService = AuthService();
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Background logo or image
           Positioned.fill(
             child: Image.asset(
               'assets/images/Keep-Logo.png',
@@ -37,7 +78,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
               color: Colors.transparent,
             ),
           ),
-
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -65,11 +105,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Logo
                         CircleAvatar(
                           radius: 70,
                           backgroundImage: AssetImage('assets/images/Keep-Logo.png'),
-                         // backgroundColor: Colors.transparent,
                         ),
                         const SizedBox(height: 12),
 
@@ -92,8 +130,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            filled: true, // Enable background color
-                            fillColor: Colors.grey[200], // Light gray color
+                            filled: true,
+                            fillColor: Colors.grey[200],
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -104,7 +142,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Email
+                        // Email (username)
                         TextFormField(
                           controller: emailController,
                           decoration: InputDecoration(
@@ -113,8 +151,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            filled: true, // Enable background color
-                            fillColor: Colors.grey[200], // Light gray color
+                            filled: true,
+                            fillColor: Colors.grey[200],
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -122,6 +160,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             }
                             if (!value.contains('@')) {
                               return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Team ID
+                        TextFormField(
+                          controller: teamController,
+                          decoration: InputDecoration(
+                            labelText: 'Team ID',
+                            prefixIcon: Icon(Icons.group),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[200],
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter team id (e.g. 1)';
+                            }
+                            if (int.tryParse(value) == null) {
+                              return 'Team id must be a number';
                             }
                             return null;
                           },
@@ -146,8 +209,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            filled: true, // Enable background color
-                            fillColor: Colors.grey[200], // Light gray color
+                            filled: true,
+                            fillColor: Colors.grey[200],
                           ),
                           validator: (value) {
                             if (value == null || value.length < 6) {
@@ -168,8 +231,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            filled: true, // Enable background color
-                            fillColor: Colors.grey[200], // Light gray color
+                            filled: true,
+                            fillColor: Colors.grey[200],
                           ),
                           validator: (value) {
                             if (value != passwordController.text) {
@@ -184,33 +247,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: isLoading
-                                ? null
-                                : () async {
-                              if (_formKey.currentState!.validate()) {
-                                setState(() => isLoading = true);
-                                bool success = await authService.register(
-                                  nameController.text.trim(),
-                                  emailController.text.trim(),
-                                  passwordController.text.trim(),
-                                );
-                                setState(() => isLoading = false);
-
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Account created successfully!')),
-                                  );
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => LoginScreen()),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Registration failed')),
-                                  );
-                                }
-                              }
-                            },
+                            onPressed: isLoading ? null : _submit,
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               backgroundColor: theme.primaryColor,
@@ -220,7 +257,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ),
                             child: isLoading
-                                ? CircularProgressIndicator(color: Colors.white)
+                                ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
                                 : Text(
                               'Create Account',
                               style: TextStyle(fontSize: 16),

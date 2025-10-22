@@ -62,26 +62,66 @@ class AuthService {
     }
     return null;
   }
-  Future<bool> register(String name, String email, String password) async {
+
+  Future<int?> getUserId() async {
+    final user = await getUser();
+    if (user != null && user['id'] != null) {
+      return user['id'] is int
+          ? user['id']
+          : int.tryParse(user['id'].toString());
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>> register({
+    required String name,
+    required String username,
+    required String password,
+    required String teamId,
+  }) async {
+    final url = Uri.parse('$baseUrl/register');
     try {
       final response = await http.post(
-        Uri.parse('https://yourapi.com/api/register'),
-        headers: {'Content-Type': 'application/json'},
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: jsonEncode({
-          'name': name,
-          'email': email,
+          'username': username,
           'password': password,
+          'name': name,
+          'team_id': teamId,
         }),
       );
 
-      if (response.statusCode == 200) {
-        return true;
+      final body = utf8.decode(response.bodyBytes);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // assume response body contains JSON
+        final jsonResp = jsonDecode(body);
+        return {
+          'success': true,
+          'message': jsonResp['message'] ?? 'Registered successfully',
+          'data': jsonResp,
+        };
       } else {
-        return false;
+        // try to parse error message
+        String err = 'Registration failed (status ${response.statusCode})';
+        try {
+          final jsonErr = jsonDecode(body);
+          if (jsonErr is Map && jsonErr.containsKey('message')) {
+            err = jsonErr['message'].toString();
+          } else if (jsonErr is Map && jsonErr.containsKey('error')) {
+            err = jsonErr['error'].toString();
+          } else {
+            err = body;
+          }
+        } catch (_) {
+          err = body;
+        }
+        return {'success': false, 'message': err};
       }
     } catch (e) {
-      print('Register error: $e');
-      return false;
+      return {'success': false, 'message': 'Exception: $e'};
     }
   }
 

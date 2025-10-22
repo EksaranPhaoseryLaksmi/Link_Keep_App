@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:link_keep_app/service/auth_service.dart';
 import '../models/Category.dart';
 import '../service/api_service.dart';
 
@@ -33,7 +34,7 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
   Future<void> _saveCategory() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-
+    final int? userid = await AuthService().getUserId();
     final apiService = ApiService(widget.token);
     try {
       if (widget.category == null) {
@@ -42,7 +43,7 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
           'name': _nameController.text,
           'url': _urlController.text,
           'description': _descController.text,
-          'created_by': '1',
+          'created_by': userid,
           'sub': '',
         });
       } else {

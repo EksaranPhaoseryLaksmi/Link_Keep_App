@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/Category.dart';
 import '../service/api_service.dart';
+import '../service/auth_service.dart';
 
 class EditContentScreen extends StatefulWidget {
   final Map<String, dynamic> contentItem;
@@ -53,8 +54,9 @@ class _EditContentScreenState extends State<EditContentScreen> {
 
   Future<void> _fetchCategories() async {
     try {
+      final int? userid = await AuthService().getUserId();
       final apiService = ApiService(widget.token);
-      final categories = await apiService.fetchCategories();
+      final categories = await apiService.fetchCategories(userid);
 
       setState(() {
         _categories = categories;

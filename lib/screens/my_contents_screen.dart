@@ -5,9 +5,12 @@ import '../service/api_service.dart';
 import '../service/auth_service.dart';
 import '../models/Category.dart';
 import 'edit_content_screen.dart';
+import 'VideoPlayerScreen.dart';
+import 'MusicPlayerScreen.dart';
+import 'WebViewerScreen.dart';
 
 class MyContentsScreen extends StatefulWidget {
-  final int? categoryId; // optional category filter
+  final int? categoryId;
 
   const MyContentsScreen({super.key, this.categoryId});
 
@@ -28,7 +31,7 @@ class _MyContentsScreenState extends State<MyContentsScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedCategoryId = widget.categoryId; // set initial category filter
+    _selectedCategoryId = widget.categoryId;
     _initTokenAndData();
     _searchController.addListener(_onSearchChanged);
   }
@@ -43,11 +46,11 @@ class _MyContentsScreenState extends State<MyContentsScreen> {
   Future<void> _fetchCategoriesAndContents() async {
     if (_token == null) return;
     try {
+      final int? userid = await AuthService().getUserId();
       final apiService = ApiService(_token!);
-      final categories = await apiService.fetchCategories();
-      final contents = await apiService.getLinks();
+      final categories = await apiService.fetchCategories(userid);
+      final contents = await apiService.getLinks(userid);
 
-      // Ensure is_favorite is boolean
       for (var item in contents) {
         item['is_favorite'] = item['is_favorite'].toString() == '1' ||
             item['is_favorite'].toString().toLowerCase() == 'true';
@@ -91,6 +94,102 @@ class _MyContentsScreenState extends State<MyContentsScreen> {
   void _onCategorySelected(int? categoryId) {
     setState(() => _selectedCategoryId = categoryId);
     _filterContents();
+  }
+
+  Future<void> _openContent(Map<String, dynamic> item) async {
+    final dynamic statusValue = item['status'];
+    final String? url = item['url'];
+
+    if (url == null || url.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Invalid URL")));
+      return;
+    }
+
+    // Convert status safely (can be string or int)
+    final int status = statusValue is String
+        ? int.tryParse(statusValue) ?? -1
+        : (statusValue ?? -1);
+
+    debugPrint("Opening content → status: $status, url: $url");
+
+    if (status == 0) {
+      // 🎬 VIDEO
+      if (url.contains('youtube.com') || url.contains('youtu.be')) {
+        // ▶️ YouTube video player inside app
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => VideoPlayerScreen(url: url)),
+        );
+
+      } else if (url.contains('facebook.com')) {
+        // 📘 FACEBOOK — try Facebook app first
+        final Uri fbAppUri = Uri.parse(url.replaceFirst('https://', 'fb://'));
+        final Uri fbWebUri = Uri.parse(url);
+        try {
+          if (await canLaunchUrl(fbAppUri)) {
+            await launchUrl(fbAppUri, mode: LaunchMode.externalApplication);
+          } else if (await canLaunchUrl(fbWebUri)) {
+            await launchUrl(fbWebUri, mode: LaunchMode.externalApplication);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Cannot open Facebook link")),
+            );
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error opening Facebook: $e")),
+          );
+        }
+
+      } else if (url.contains('tiktok.com')) {
+        // 🎵 TIKTOK — try to open in TikTok app first
+        final Uri tiktokAppUri = Uri.parse(url.replaceFirst('https://', 'tiktok://'));
+        final Uri tiktokWebUri = Uri.parse(url);
+        try {
+          if (await canLaunchUrl(tiktokAppUri)) {
+            await launchUrl(tiktokAppUri, mode: LaunchMode.externalApplication);
+          } else if (await canLaunchUrl(tiktokWebUri)) {
+            await launchUrl(tiktokWebUri, mode: LaunchMode.externalApplication);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Cannot open TikTok link")),
+            );
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error opening TikTok: $e")),
+          );
+        }
+
+      } else {
+        // 🌍 Other videos → open in WebView
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => WebViewerScreen(url: url)),
+        );
+      }
+
+    } else if (status == 1) {
+      // 🎧 MUSIC
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => MusicPlayerScreen(url: url)),
+      );
+
+    } else if (status == 2) {
+      // 🌐 WEB PAGE
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => WebViewerScreen(url: url)),
+      );
+
+    } else {
+      // ❓ Unknown type
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unknown content type")),
+      );
+    }
   }
 
   @override
@@ -173,7 +272,11 @@ class _MyContentsScreenState extends State<MyContentsScreen> {
                 return GestureDetector(
                   onTap: () => _onCategorySelected(cat.id),
                   child: _buildCategoryCard(
-                      cat.name, cat.imageUrl ?? '', cat.id, _selectedCategoryId == cat.id),
+                    cat.name ?? '',
+                    cat.imageUrl ?? '',
+                    cat.id,
+                    _selectedCategoryId == cat.id,
+                  ),
                 );
               },
             ),
@@ -189,7 +292,10 @@ class _MyContentsScreenState extends State<MyContentsScreen> {
                   Container(height: 6, color: Colors.teal[200]),
               itemBuilder: (context, index) {
                 final item = _filteredContents[index];
-                return _buildContentCard(item);
+                return GestureDetector(
+                  onTap: () => _openContent(item),
+                  child: _buildContentCard(item),
+                );
               },
             ),
           ),
@@ -210,9 +316,10 @@ class _MyContentsScreenState extends State<MyContentsScreen> {
         border: selected ? Border.all(color: Colors.teal, width: 2) : null,
         boxShadow: [
           BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              blurRadius: 5,
-              offset: const Offset(2, 2)),
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 5,
+            offset: const Offset(2, 2),
+          ),
         ],
       ),
       child: Column(
@@ -261,27 +368,19 @@ class _MyContentsScreenState extends State<MyContentsScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color: Colors.grey[200], borderRadius: BorderRadius.circular(12)),
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          GestureDetector(
-            onTap: () async {
-              final Uri url = Uri.parse(item['url']!);
-              if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Could not open link")));
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                  color: Colors.teal[400],
-                  borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.upload, color: Colors.white),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.teal[400],
+              borderRadius: BorderRadius.circular(12),
             ),
+            child: const Icon(Icons.play_arrow, color: Colors.white),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -292,21 +391,12 @@ class _MyContentsScreenState extends State<MyContentsScreen> {
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 4),
-                InkWell(
-                  onTap: () async {
-                    final Uri url = Uri.parse(item['url']!);
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(url,
-                          mode: LaunchMode.externalApplication);
-                    }
-                  },
-                  child: Text(
-                    item['describtion'] ?? '',
-                    style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.blue,
-                        decoration: TextDecoration.underline),
-                  ),
+                Text(
+                  item['describtion'] ?? '',
+                  style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      fontStyle: FontStyle.italic),
                 ),
               ],
             ),
@@ -332,13 +422,12 @@ class _MyContentsScreenState extends State<MyContentsScreen> {
               ),
               IconButton(
                 icon: Icon(
-                    item['is_favorite'] == true ? Icons.favorite : Icons.favorite_border),
-                color: item['is_favorite'] == true ? Colors.red : Colors.black54,
+                    isFavourite ? Icons.favorite : Icons.favorite_border),
+                color: isFavourite ? Colors.red : Colors.black54,
                 onPressed: () async {
                   if (_token == null) return;
 
-                  final oldValue = item['is_favorite'] == true;
-
+                  final oldValue = isFavourite;
                   setState(() {
                     item['is_favorite'] = !oldValue;
                   });
@@ -353,9 +442,8 @@ class _MyContentsScreenState extends State<MyContentsScreen> {
                     setState(() {
                       item['is_favorite'] = oldValue;
                     });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to update favourite: $e')));
-
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Failed to update favourite: $e')));
                   }
 
                   _filterContents();

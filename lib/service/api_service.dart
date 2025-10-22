@@ -38,9 +38,9 @@ class ApiService {
   }
 
   // ---------------- Fetch Categories ----------------
-  Future<List<Category>> fetchCategories() async {
+  Future<List<Category>> fetchCategories(int? id) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/category'),
+      Uri.parse('$baseUrl/category/$id'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -74,9 +74,9 @@ class ApiService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getLinks() async {
+  Future<List<Map<String, dynamic>>> getLinks(int? id) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/link'),
+      Uri.parse('$baseUrl/link/$id'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
