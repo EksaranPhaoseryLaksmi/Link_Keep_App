@@ -105,7 +105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Divider(height: 1),
                 ListTile(
                   leading: Icon(Icons.lock, color: Colors.orange),
-                  title: Text('Forget Password'),
+                  title: Text('Change Password'),
                   onTap: () {
                     Navigator.push(
                       context,

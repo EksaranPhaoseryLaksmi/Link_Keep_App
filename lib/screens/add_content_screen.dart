@@ -126,6 +126,7 @@ class _AddContentScreenState extends State<AddContentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 24),
               // Title
               TextField(
                 controller: _titleController,

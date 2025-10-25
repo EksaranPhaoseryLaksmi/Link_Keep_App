@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../service/api_service.dart';
+import '../service/auth_service.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   final String token;
@@ -46,13 +47,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     });
 
     try {
+      final AuthService _authService = AuthService();
+      final user = await _authService.getUser();
+      if (user != null) {
       final success = await _apiService.changePassword(
-        username: widget.username,
+        username: user['username'] ?? '',
         oldPassword: _oldPasswordController.text.trim(),
         newPassword: _newPasswordController.text.trim(),
         confirmPassword: _confirmPasswordController.text.trim(),
       );
-
       setState(() => _isLoading = false);
 
       if (success) {
@@ -65,6 +68,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           _errorMessage = 'Failed to update password. Please check your inputs.';
         });
       }
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -76,7 +80,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar( backgroundColor: Colors.greenAccent,title: Text('Change Password')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.greenAccent,
+        elevation: 0,
+        title: const Text(
+          "Change Password",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(

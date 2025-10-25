@@ -23,7 +23,15 @@ class _WebViewerScreenState extends State<WebViewerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Web Viewer")),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.greenAccent,
+        elevation: 0,
+        title: const Text(
+          "Web View",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ),
       body: WebViewWidget(controller: _controller),
     );
   }

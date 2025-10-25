@@ -256,9 +256,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
           padding:
-          const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
           elevation: 0,
-          minimumSize: const Size(10, 40),
+          minimumSize: const Size(80, 40),
         ),
       ),
     );
@@ -281,10 +281,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             padding:
-            const EdgeInsets.symmetric(horizontal: 70, vertical: 20),
+            const EdgeInsets.symmetric(horizontal: 70, vertical: 15),
             elevation: 0,
             minimumSize: const Size(180, 45),
           ),
+
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: const [
@@ -295,7 +296,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     fontWeight: FontWeight.bold,
                     fontSize: 17),
               ),
-              SizedBox(width: 80),
+              SizedBox(width: 70),
               Icon(Icons.arrow_forward_ios,
                   size: 18, color: Colors.black),
             ],

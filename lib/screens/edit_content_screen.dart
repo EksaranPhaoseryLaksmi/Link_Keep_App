@@ -120,7 +120,7 @@ class _EditContentScreenState extends State<EditContentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.greenAccent,
       appBar: AppBar(
         backgroundColor: Colors.greenAccent,
         elevation: 0,
@@ -143,6 +143,7 @@ class _EditContentScreenState extends State<EditContentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 16),
                 TextField(
                   controller: _titleController,
                   decoration: const InputDecoration(
@@ -191,11 +192,14 @@ class _EditContentScreenState extends State<EditContentScreen> {
                     ),
                     const Text("Active"),
                     const SizedBox(width: 20),
-                    Checkbox(
-                      value: _isShared,
-                      onChanged: (val) => setState(() => _isShared = val ?? false),
+                    Visibility(
+                      visible: false, // change to true when you want to show it
+                      child: Checkbox(
+                        value: _isShared,
+                        onChanged: (val) => setState(() => _isShared = val ?? false),
+                      ),
                     ),
-                    const Text("Shared"),
+                    //const Text("Shared"),
                     const SizedBox(width: 20),
                     Checkbox(
                       value: _isFavourite,
@@ -216,6 +220,7 @@ class _EditContentScreenState extends State<EditContentScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 24),
               ],
             ),
           ),

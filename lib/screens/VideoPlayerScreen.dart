@@ -31,7 +31,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Video Player")),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.greenAccent,
+        elevation: 0,
+        title: const Text(
+          "Video Player",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ),
       body: Center(
         child: YoutubePlayer(
           controller: _controller,

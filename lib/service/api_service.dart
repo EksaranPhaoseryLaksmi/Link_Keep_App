@@ -4,6 +4,7 @@ import '../models/Category.dart';
 
 class ApiService {
   final String baseUrl = "http://192.168.18.125:8080/api";
+  //final String baseUrl = "https://abcd-1234.ngrok-free.app/api";
   final String token;
 
   ApiService(this.token);
@@ -16,7 +17,7 @@ class ApiService {
     required String confirmPassword,
   }) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/changepwd'),
+      Uri.parse('$baseUrl/auth/changepwd'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
