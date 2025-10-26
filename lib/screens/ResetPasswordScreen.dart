@@ -2,20 +2,23 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-class ForgetPasswordScreen extends StatefulWidget {
+class ResetPasswordScreen extends StatefulWidget {
+  final String token;
+  const ResetPasswordScreen({required this.token});
+
   @override
-  State<ForgetPasswordScreen> createState() => _ForgetPasswordScreenState();
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
-  final emailController = TextEditingController();
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+  final newPasswordController = TextEditingController();
   bool isLoading = false;
 
-  Future<void> _submit() async {
-    final email = emailController.text.trim();
-    if (email.isEmpty) {
+  Future<void> _resetPassword() async {
+    final newPassword = newPasswordController.text.trim();
+    if (newPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter your email')),
+        SnackBar(content: Text('Please enter your new password')),
       );
       return;
     }
@@ -24,20 +27,23 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.18.125:8080/api/auth/forgot-password'),
+        Uri.parse('http://192.168.18.125:8080/api/auth/reset-password'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
+        body: jsonEncode({
+          'token': widget.token,
+          'newPassword': newPassword,
+        }),
       );
 
       final resData = jsonDecode(response.body);
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resData['message'] ?? 'Reset link sent!')),
+          SnackBar(content: Text(resData['message'] ?? 'Password reset successful!')),
         );
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resData['error'] ?? 'Error sending reset link')),
+          SnackBar(content: Text(resData['error'] ?? 'Error resetting password')),
         );
       }
     } catch (e) {
@@ -52,31 +58,31 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Forgot Password')),
+      appBar: AppBar(title: Text('Reset Password')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Text(
-              'Enter your registered email to reset your password.',
+              'Enter your new password below.',
               style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 16),
             TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
+              controller: newPasswordController,
+              obscureText: true,
               decoration: InputDecoration(
-                labelText: 'Email',
+                labelText: 'New Password',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: Icon(Icons.email),
+                prefixIcon: Icon(Icons.lock),
               ),
             ),
             SizedBox(height: 24),
             isLoading
                 ? CircularProgressIndicator()
                 : ElevatedButton(
-              onPressed: _submit,
-              child: Text('Send Reset Link'),
+              onPressed: _resetPassword,
+              child: Text('Reset Password'),
             ),
           ],
         ),
