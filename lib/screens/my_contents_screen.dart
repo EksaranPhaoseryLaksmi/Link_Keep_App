@@ -387,7 +387,7 @@ class _MyContentsScreenState extends State<MyContentsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Title: ${item['title']}',
+                Text('${item['title']}',
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 4),

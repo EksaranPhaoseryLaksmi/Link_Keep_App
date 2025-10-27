@@ -4,7 +4,7 @@ import '../models/Category.dart';
 
 class ApiService {
   final String baseUrl = "http://192.168.18.125:8080/api";
-  //final String baseUrl = "https://abcd-1234.ngrok-free.app/api";
+  //final String baseUrl = "https://unburlesqued-wilton-fattier.ngrok-free.dev/api";
   final String token;
 
   ApiService(this.token);
